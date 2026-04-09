@@ -1233,11 +1233,7 @@ def dashboard():
     return render_template("dashboard.html", user=user)
 
 
-@app.route("/")
-def index():
-    return render_template_string(
-        """
-<!DOCTYPE html>
+CHATBOT_HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1784,8 +1780,18 @@ def index():
     </script>
 </body>
 </html>
-        """
-    )
+"""
+
+
+@app.route("/")
+def index():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    user = chatbot.get_user_by_id(session["user_id"])
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+    return render_template_string(CHATBOT_HTML, user=user)
 
 
 @app.route("/chat", methods=["POST"])
