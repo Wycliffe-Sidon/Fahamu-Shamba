@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: fahamu-shamba
+    env: python
+    plan: free
+    healthCheckPath: /health
+    buildCommand: ./build.sh
+    startCommand: gunicorn -b 0.0.0.0:$PORT --timeout 120 --workers 2 app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: PYTHONUNBUFFERED
+        value: "true"
+      - key: USE_MOCK_DATA
+        value: "true"
+      - key: DB_PATH
+        value: /app/data/fahamu_shamba.db
+      - key: MODEL_DATA_DIR
+        value: /app/data
+      - key: MODEL_PATH
+        value: /app/data/enhanced_crop_recommendation_model.pkl
+      - key: TRAINING_DATA_PATH
+        value: /app/data/fahamu_shamba_training_data.csv
+    disk:
+      name: fahamu-storage
+      mountPath: /app/data
+      sizeGB: 1

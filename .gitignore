@@ -1,0 +1,57 @@
+# Environment & secrets
+.env
+
+# Virtual environment
+fahamu_env/
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+
+# ML model files (large binaries)
+*.pkl
+*.joblib
+
+# Training data (can be large)
+fahamu_shamba_training_data.csv
+
+# pytest cache
+.pytest_cache/
+pytest-cache-files-*/
+test_artifacts/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.env.docker
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

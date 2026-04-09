@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ translations[current_lang]['login_title'] }}{% endblock %}
+
+{% block content %}
+<div class="auth-form-container">
+    <div class="auth-form-header">
+        <h2 data-translate="login_title">{{ translations[current_lang]['login_title'] }}</h2>
+        <p data-translate="login_subtitle">{{ translations[current_lang]['login_subtitle'] }}</p>
+    </div>
+
+    <form id="login-form" class="auth-form" method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label for="identifier" data-translate="email_username">{{ translations[current_lang]['email_username'] }}</label>
+            <div class="input-group">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" id="identifier" name="identifier" required
+                       data-translate="email_username_placeholder"
+                       placeholder="{{ translations[current_lang]['email_username_placeholder'] }}"
+                       value="{{ request.form.identifier if request.form.identifier else '' }}">
+            </div>
+            <div class="error-message" id="identifier-error"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="password" data-translate="password">{{ translations[current_lang]['password'] }}</label>
+            <div class="input-group">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="password" name="password" required
+                       data-translate="password_placeholder"
+                       placeholder="{{ translations[current_lang]['password_placeholder'] }}">
+                <button type="button" class="password-toggle" onclick="togglePassword('password')" title="Toggle password visibility" aria-label="Toggle password visibility">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <div class="error-message" id="password-error"></div>
+        </div>
+
+        <div class="form-options">
+            <label class="checkbox-label">
+                <input type="checkbox" name="remember" id="remember">
+                <span class="checkmark"></span>
+                <span data-translate="remember_me">{{ translations[current_lang]['remember_me'] }}</span>
+            </label>
+            <a href="{{ url_for('forgot_password') }}" class="forgot-link" data-translate="forgot_password">
+                {{ translations[current_lang]['forgot_password'] }}
+            </a>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary btn-full">
+            <i class="fas fa-sign-in-alt"></i>
+            <span data-translate="login_button">{{ translations[current_lang]['login_button'] }}</span>
+        </button>
+    </form>
+
+    <div class="auth-links">
+        <p>
+            <span data-translate="no_account">{{ translations[current_lang]['no_account'] }}</span>
+            <a href="{{ url_for('register') }}" data-translate="register_link">{{ translations[current_lang]['register_link'] }}</a>
+        </p>
+    </div>
+
+    <div class="auth-features">
+        <div class="feature-item">
+            <i class="fas fa-mobile-alt"></i>
+            <span data-translate="mobile_access">{{ translations[current_lang]['mobile_access'] }}</span>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-language"></i>
+            <span data-translate="multilingual">{{ translations[current_lang]['multilingual'] }}</span>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <span data-translate="secure">{{ translations[current_lang]['secure'] }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (document.getElementById('login-form')) {
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        if (!validateLoginForm()) {
+            e.preventDefault();
+        }
+    });
+}
+</script>
+{% endblock %}

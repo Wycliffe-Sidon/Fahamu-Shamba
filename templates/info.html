@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="auth-form-container">
+    <div class="auth-form-header">
+        <h2>{{ title }}</h2>
+    </div>
+
+    <div class="info-copy">
+        <p>{{ message }}</p>
+        <div class="auth-links">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-full">Back to Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

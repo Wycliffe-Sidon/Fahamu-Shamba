@@ -1,0 +1,77 @@
+services:
+  chatbot:
+    build: .
+    container_name: fahamu_chatbot
+    command: gunicorn -b 0.0.0.0:5002 farmer_chatbot:app
+    env_file: .env
+    ports:
+      - "5002:5002"
+    volumes:
+      - fahamu_db:/app/db
+    restart: unless-stopped
+
+  integration:
+    build: .
+    container_name: fahamu_integration
+    command: gunicorn -b 0.0.0.0:5006 chatbot_integration_service:app
+    env_file: .env
+    environment:
+      CHATBOT_URL: http://chatbot:5002
+    ports:
+      - "5006:5006"
+    depends_on:
+      - chatbot
+    restart: unless-stopped
+
+  realtime:
+    build: .
+    container_name: fahamu_realtime
+    command: gunicorn -b 0.0.0.0:5007 realtime_data_service:app
+    env_file: .env
+    ports:
+      - "5007:5007"
+    volumes:
+      - fahamu_db:/app/db
+    restart: unless-stopped
+
+  feedback:
+    build: .
+    container_name: fahamu_feedback
+    command: gunicorn -b 0.0.0.0:5004 feedback_system:app
+    env_file: .env
+    ports:
+      - "5004:5004"
+    volumes:
+      - fahamu_db:/app/db
+    restart: unless-stopped
+
+  ussd:
+    build: .
+    container_name: fahamu_ussd
+    command: python ussd_sms_integration.py
+    env_file: .env
+    environment:
+      CHATBOT_URL: http://integration:5006
+    ports:
+      - "5000:5000"
+    depends_on:
+      - integration
+    volumes:
+      - fahamu_db:/app/db
+    restart: unless-stopped
+
+  ivr:
+    build: .
+    container_name: fahamu_ivr
+    command: python enhanced_ivr_system.py
+    env_file: .env
+    ports:
+      - "5001:5001"
+    depends_on:
+      - chatbot
+    volumes:
+      - fahamu_db:/app/db
+    restart: unless-stopped
+
+volumes:
+  fahamu_db:
