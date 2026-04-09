@@ -1053,10 +1053,13 @@ Provide helpful agricultural advice based on this farmer's specific context."""
         except sqlite3.Error as exc:
             db_ok = False
             db_error = str(exc)
+        api_key = self.settings.openai_api_key
+        provider = "groq" if api_key.startswith("gsk_") else "openai" if api_key.startswith("sk-") else "none"
         return {
             "database_ok": db_ok,
             "database_error": db_error,
             "openai_configured": self.settings.openai_configured,
+            "llm_provider": provider,
             "secret_configured": self.settings.secret_configured,
             "service_api_key_configured": self.settings.service_api_key_configured,
             "production_mode": self.settings.production_mode,
