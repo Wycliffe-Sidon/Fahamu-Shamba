@@ -22,18 +22,7 @@ RUN pip install --no-cache-dir --disable-pip-version-check --retries 10 --timeou
 
 COPY . .
 
-RUN mkdir -p /app/data && \
-    python -c "
-from feedback_system import init_db as init_feedback_db
-from farmer_chatbot import chatbot
-init_feedback_db()
-chatbot.init_database()
-try:
-    chatbot._get_recommendation_engine()
-except Exception as e:
-    print(f'Model bootstrap warning: {e}')
-print('Bootstrap complete')
-"
+RUN mkdir -p /app/data && python bootstrap.py
 
 EXPOSE 10000
 
