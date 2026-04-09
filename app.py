@@ -614,6 +614,35 @@ def feedback_retrain():
     return jsonify(feedback_system.retrain_if_ready(threshold))
 
 
+@app.route("/debug-llm", methods=["GET"])
+def debug_llm():
+    api_key = settings.openai_api_key
+    is_groq = api_key.startswith("gsk_")
+    api_url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
+    model = "llama3-8b-8192" if is_groq else settings.openai_model
+    try:
+        import requests as req
+        resp = req.post(
+            api_url,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": "What is the current market price of tomatoes in Kenya? Give a short answer."}],
+                "max_tokens": 200,
+            },
+            timeout=20,
+        )
+        return jsonify({
+            "status_code": resp.status_code,
+            "provider": "groq" if is_groq else "openai",
+            "model": model,
+            "key_prefix": api_key[:8] + "...",
+            "response_body": resp.json() if resp.ok else resp.text,
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc), "provider": "groq" if is_groq else "openai"}), 500
+
+
 @app.route("/deployment/summary", methods=["GET"])
 def deployment_summary():
     readiness = chatbot.readiness_report()
