@@ -1933,9 +1933,10 @@ def readiness():
 if __name__ == "__main__":
     print("FAHAMU SHAMBA - FARMER CHATBOT")
     print("=" * 50)
-    print("Starting on http://localhost:5002")
+    port = int(os.getenv("PORT", "5002"))
+    print(f"Starting on http://localhost:{port}")
     if not settings.openai_configured:
         print("WARNING: OPENAI_API_KEY is missing. The service will use fallback answers.")
     if settings.production_mode and not settings.production_config_ok:
         print("WARNING: Production mode is enabled but one or more required secrets are placeholders or missing.")
-    app.run(debug=settings.debug, host="0.0.0.0", port=5002)
+    app.run(debug=settings.debug, host="0.0.0.0", port=port)
