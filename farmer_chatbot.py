@@ -78,9 +78,9 @@ class Settings:
         self.debug = _as_bool(os.getenv("DEBUG"), default=False)
         self.secret_key = os.getenv("SECRET_KEY", "").strip()
         self.rate_limit_per_minute = max(1, _as_int(os.getenv("RATE_LIMIT_PER_MINUTE"), 60))
-        self.max_response_length = max(100, _as_int(os.getenv("MAX_RESPONSE_LENGTH"), 500))
+        self.max_response_length = max(100, _as_int(os.getenv("MAX_RESPONSE_LENGTH"), 2000))
         self.confidence_threshold = _as_float(os.getenv("CONFIDENCE_THRESHOLD"), 0.3)
-        self.request_timeout = max(5, _as_int(os.getenv("OPENAI_TIMEOUT_SECONDS"), 25))
+        self.request_timeout = max(5, _as_int(os.getenv("OPENAI_TIMEOUT_SECONDS"), 30))
         raw_url = os.getenv("DATA_SERVICE_URL", "").rstrip("/")
         self.data_service_url = "" if "localhost" in raw_url or "127.0.0.1" in raw_url else raw_url
         self.allowed_origins = [
@@ -1023,10 +1023,11 @@ Provide helpful agricultural advice based on this farmer's specific context."""
     ) -> Dict[str, Any]:
         farmer_profile = self.get_farmer_profile(phone_number) if phone_number else {}
         intent = self.detect_intent(message)
-        if intent == "planting_advice":
+        # Always try LLM first for all intents
+        response = self.get_openai_response(message, farmer_profile, image_data=image_data)
+        # Only use recommendation engine if LLM failed (fallback) and intent is planting
+        if response.get("source") in ("provider_error", "provider_response_error", "missing_api_key") and intent == "planting_advice":
             response = self.get_crop_recommendation_response(message, farmer_profile, context=context)
-        else:
-            response = self.get_openai_response(message, farmer_profile, image_data=image_data)
         if phone_number:
             self.save_chat_history(phone_number, message, response)
         response["timestamp"] = datetime.now().isoformat()
