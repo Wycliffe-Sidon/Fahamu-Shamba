@@ -81,10 +81,11 @@ class Settings:
         self.max_response_length = max(100, _as_int(os.getenv("MAX_RESPONSE_LENGTH"), 500))
         self.confidence_threshold = _as_float(os.getenv("CONFIDENCE_THRESHOLD"), 0.3)
         self.request_timeout = max(5, _as_int(os.getenv("OPENAI_TIMEOUT_SECONDS"), 25))
-        self.data_service_url = os.getenv("DATA_SERVICE_URL", "").rstrip("/")
+        raw_url = os.getenv("DATA_SERVICE_URL", "").rstrip("/")
+        self.data_service_url = "" if "localhost" in raw_url or "127.0.0.1" in raw_url else raw_url
         self.allowed_origins = [
             origin.strip()
-            for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5002,http://127.0.0.1:5002").split(",")
+            for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",")
             if origin.strip()
         ]
         self.service_api_key = os.getenv("FAHAMU_API_KEY", "").strip()
@@ -130,18 +131,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_USE_SIGNER"] = True
 
-CORS(
-    app,
-    resources={
-        r"/chat": {"origins": settings.allowed_origins},
-        r"/profile*": {"origins": settings.allowed_origins},
-        r"/health*": {"origins": settings.allowed_origins},
-        r"/login*": {"origins": settings.allowed_origins},
-        r"/register*": {"origins": settings.allowed_origins},
-        r"/logout*": {"origins": settings.allowed_origins},
-    },
-    supports_credentials=True,
-)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 TRANSLATIONS = {
     "en": {
@@ -666,7 +656,7 @@ Provide helpful agricultural advice based on this farmer's specific context."""
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": user_content},
             ],
-            "max_tokens": min(self.settings.max_response_length, 800),
+            "max_tokens": 800,
             "temperature": 0.5,
         }
 
