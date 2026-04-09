@@ -92,7 +92,10 @@ class Settings:
 
     @property
     def openai_configured(self) -> bool:
-        return not _looks_placeholder(self.openai_api_key)
+        key = self.openai_api_key
+        if _looks_placeholder(key):
+            return False
+        return key.startswith("sk-") or key.startswith("gsk_")
 
     @property
     def secret_configured(self) -> bool:
@@ -619,12 +622,21 @@ IMPORTANT RULES:
         farmer_profile: Dict[str, Any],
         image_data: Optional[str] = None,
     ) -> Dict[str, Any]:
-        if not self.openai_api_key:
-            logger.warning("OPENAI_API_KEY is missing; returning fallback response.")
+        api_key = self.openai_api_key
+        if not api_key:
+            logger.warning("No API key configured; returning fallback response.")
             return self.get_fallback_response(message, reason="missing_api_key", image_supplied=bool(image_data))
 
-        context_prompt = f"""
-Farmer Profile:
+        # Support both Groq (gsk_) and OpenAI (sk-) keys
+        is_groq = api_key.startswith("gsk_")
+        if is_groq:
+            api_url = "https://api.groq.com/openai/v1/chat/completions"
+            model = "llama3-8b-8192"
+        else:
+            api_url = "https://api.openai.com/v1/chat/completions"
+            model = self.settings.openai_model
+
+        context_prompt = f"""Farmer Profile:
 - Name: {farmer_profile.get('name', 'Unknown')}
 - Location: {farmer_profile.get('county', 'Unknown county, Kenya')}
 - Land size: {farmer_profile.get('land_size_acres', 'Unknown')} acres
@@ -637,19 +649,19 @@ Season: {self.get_current_season()}
 
 Farmer's question: {message}
 
-Provide helpful agricultural advice based on this farmer's specific context.
-"""
-        user_content = [{"type": "text", "text": context_prompt}]
-        if image_data:
-            user_content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": image_data},
-                }
-            )
+Provide helpful agricultural advice based on this farmer's specific context."""
+
+        # Groq does not support image_url content type
+        if is_groq or not image_data:
+            user_content: Any = context_prompt
+        else:
+            user_content = [
+                {"type": "text", "text": context_prompt},
+                {"type": "image_url", "image_url": {"url": image_data}},
+            ]
 
         payload = {
-            "model": self.settings.openai_model,
+            "model": model,
             "messages": [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": user_content},
@@ -660,9 +672,9 @@ Provide helpful agricultural advice based on this farmer's specific context.
 
         try:
             response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
+                api_url,
                 headers={
-                    "Authorization": f"Bearer {self.openai_api_key}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
                 json=payload,
@@ -681,10 +693,10 @@ Provide helpful agricultural advice based on this farmer's specific context.
                 "used_image": bool(image_data),
             }
         except requests.RequestException as exc:
-            logger.error("OpenAI request failed: %s", exc)
+            logger.error("LLM request failed (%s): %s", "groq" if is_groq else "openai", exc)
             return self.get_fallback_response(message, reason="provider_error", image_supplied=bool(image_data))
         except (KeyError, ValueError, TypeError) as exc:
-            logger.error("OpenAI response parsing failed: %s", exc)
+            logger.error("LLM response parsing failed: %s", exc)
             return self.get_fallback_response(message, reason="provider_response_error", image_supplied=bool(image_data))
 
     def is_agricultural_response(self, response: str) -> bool:
